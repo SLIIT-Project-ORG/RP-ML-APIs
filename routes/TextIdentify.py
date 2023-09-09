@@ -1,20 +1,24 @@
 import base64
+import os
 import cv2
 import numpy as np
 import pandas as pd
 import tempfile
 import pickle
+from pydantic import BaseModel
 from sklearn.preprocessing import LabelEncoder
 from tensorflow.keras.models import load_model
 from fastapi import APIRouter, FastAPI, Form
 from fastapi.responses import JSONResponse
 from io import BytesIO
 from PIL import Image
+from gtts import gTTS as gtts
+from PIL import Image, ImageDraw, ImageFont
 
 # Load the trained model
-model = load_model('pickle\\handwrite_model.h5')
+model = load_model('pickle_files\\handwrite_model.h5')
 dictionary_path = "datasets\\Dictionary.xlsx"
-label_encoder_path = "pickle\\label_encoder.pkl"
+label_encoder_path = "pickle_files\\label_encoder.pkl"
 
 # Define the image size
 img_size_w = 50
@@ -34,6 +38,7 @@ temp_dir = tempfile.mkdtemp()
 textIdentify = APIRouter()
 
 # Route to handle base64-encoded image and make predictions
+# http://localhsot:8000/text-identify/predict
 @textIdentify.post("/predict")
 async def predict_base64_image(file: str = Form(...)):
     try:
@@ -68,6 +73,71 @@ async def predict_base64_image(file: str = Form(...)):
     except Exception as e:
         return JSONResponse(content={"error": str(e)})
 
-app = FastAPI()
+# app = FastAPI()
 
-app.include_router(textIdentify, tags=["Image Prediction"])
+# app.include_router(textIdentify, tags=["Image Prediction"])
+
+#===============================================================================================================
+
+class TextInput(BaseModel):
+    text: str
+
+# http://localhost:8000/text-identify/text-to-speech
+@textIdentify.post("/text-to-speech")
+async def text_to_speech(text_input: TextInput):
+    myText = text_input.text
+    language = 'si'
+    
+    audio = gtts(text=myText, lang=language, slow=False)
+    audio.save("C:\\Users\\Gayashan\\Desktop\\2023-257\\RP-Frontend\\other\\audio.mp3")
+    
+    print("Path : ", "C:\\Users\\Gayashan\\Desktop\\2023-257\\RP-Frontend\\other\\audio.mp3")
+    return {
+        "response": "C:\\Users\\Gayashan\\Desktop\\2023-257\\RP-Frontend\\other\\audio.mp3",
+        "status": "200"
+    }
+        
+    # audio.save("audio.mp3")
+    
+    # audio_path = os.path.join(os.getcwd(), "audio.mp3")
+    # print("Path : ", audio_path)
+    # return {
+    #     "response": audio_path,
+    #     "status": "success"
+    # }
+    
+
+#===============================================================================================================
+# http://localhsot:8000/text-identify/text-to-image
+@textIdentify.post("/text-to-image")
+async def text_to_image(text_input: TextInput):
+    myText = text_input.text
+    
+    width, height = 1500, 600
+
+    # Create a new image with white background
+    image = Image.new("RGB", (width, height), "white")
+
+    # Load a font (you can change the font path and size)
+    font = ImageFont.truetype("other\\font\\iskpotab.ttf", 36)
+
+    # Create a drawing object
+    draw = ImageDraw.Draw(image)
+
+    # Define text position and color
+    text_position = (50, 50)
+    text_color = (0, 0, 0)  # Black color
+
+    # Draw the text on the image
+    draw.text(text_position, myText, font=font, fill=text_color)
+
+    # Save the image
+    image.save("output_image.png")
+    os.system("output_image.png")
+
+    print("Image saved as 'output_image.png'")
+    
+    return {
+        "response": "successfully downloaded",
+        "status": "200"
+    }
