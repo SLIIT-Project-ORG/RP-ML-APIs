@@ -1,3 +1,6 @@
+__pycache__/*
+ml/__pycache__/*
+models/__pycache__/*
+pickle_files/__pycache__/*
+routes/__pycache__/*
 env
-venv
-__pycache__
