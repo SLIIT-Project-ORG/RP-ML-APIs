@@ -11,14 +11,13 @@ from tensorflow.keras.models import load_model
 from fastapi import APIRouter, FastAPI, Form
 from fastapi.responses import JSONResponse
 from io import BytesIO
-from PIL import Image
 from gtts import gTTS as gtts
 from PIL import Image, ImageDraw, ImageFont
 
 # Load the trained model
-model = load_model('pickle_files\\handwrite_model.h5')
-dictionary_path = "datasets\\Dictionary.xlsx"
-label_encoder_path = "pickle_files\\label_encoder.pkl"
+model = load_model('pickle_files/handwrite_model.h5')
+dictionary_path = "datasets/Dictionary.xlsx"
+label_encoder_path = "pickle_files/label_encoder.pkl"
 
 # Define the image size
 img_size_w = 50
@@ -89,11 +88,18 @@ async def text_to_speech(text_input: TextInput):
     language = 'si'
     
     audio = gtts(text=myText, lang=language, slow=False)
-    audio.save("C:\\Users\\Gayashan\\Desktop\\2023-257\\RP-Frontend\\other\\audio.mp3")
+    audio.save("audio.mp3")
+
+    with open("audio.mp3", "rb") as audio_file:
+        audio_data = audio_file.read()
+
+    # Encode the image data in base64
+    base64_voice = base64.b64encode(audio_data)
     
-    print("Path : ", "C:\\Users\\Gayashan\\Desktop\\2023-257\\RP-Frontend\\other\\audio.mp3")
+    print("Path : ", "audio.mp3")
     return {
-        "response": "C:\\Users\\Gayashan\\Desktop\\2023-257\\RP-Frontend\\other\\audio.mp3",
+        "response": "Audio saved successfully",
+        "voice": base64_voice,
         "status": "200"
     }
         
@@ -119,7 +125,7 @@ async def text_to_image(text_input: TextInput):
     image = Image.new("RGB", (width, height), "white")
 
     # Load a font (you can change the font path and size)
-    font = ImageFont.truetype("other\\font\\iskpotab.ttf", 36)
+    font = ImageFont.truetype("other/font/iskpotab.ttf", 36)
 
     # Create a drawing object
     draw = ImageDraw.Draw(image)
@@ -133,11 +139,25 @@ async def text_to_image(text_input: TextInput):
 
     # Save the image
     image.save("output_image.png")
-    os.system("output_image.png")
+
+    with open("output_image.png", "rb") as image_file:
+        image_data = image_file.read()
+
+    # Encode the image data in base64
+    base64_image = base64.b64encode(image_data).decode('utf-8')
 
     print("Image saved as 'output_image.png'")
     
     return {
         "response": "successfully downloaded",
+        "status": "200",
+        "image": base64_image
+    }
+
+
+@textIdentify.get("/hello")
+async def hello():
+    return {
+        "response": "hello",
         "status": "200"
     }
